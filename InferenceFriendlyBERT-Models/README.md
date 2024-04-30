@@ -1,0 +1,1 @@
+This folder contains all the Inference time friendly BERT models that we applied till now.
