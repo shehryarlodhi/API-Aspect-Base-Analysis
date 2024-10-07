@@ -1,0 +1,721 @@
+Question Title,Question,Answer
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","As tweakt said, Amazon S3 is a good model to work with. Their request signatures do have some features (such as incorporating a timestamp) that help guard against both accidental and malicious request replaying.
+The nice thing about HTTP Basic is that virtually all HTTP libraries support it. You will, of course, need to require SSL in this case because sending plaintext passwords over the net is almost universally a bad thing. Basic is preferable to Digest when using SSL because even if the caller already knows that credentials are required, Digest requires an extra roundtrip to exchange the nonce value. With Basic, the callers simply sends the credentials the first time.
+Once the identity of the client is established, authorization is really just an implementation problem. However, you could delegate the authorization to some other component with an existing authorization model. Again the nice thing about Basic here is your server ends up with a plaintext copy of the client's password that you can simply pass on to another component within your infrastructure as needed."
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","There are no standards for REST other than HTTP. There are established REST services out there. I suggest you take a peek at them and get a feel for how they work. 
+For example, we borrowed a lot of ideas from Amazon's S3 REST service when developing our own. But we opted not to use the more advanced security model based on request signatures. The simpler approach is HTTP Basic auth over SSL. You have to decide what works best in your situation.
+Also, I highly recommend the book RESTful Web Services from O'reilly. It explains the core concepts and does provide some best practices. You can generally take the model they provide and map it to your own application."
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","There is a great checklist found on Github:
+Authentication
+
+Don't reinvent the wheel in Authentication, token generation, password storage. Use the standards.
+Use Max Retry and jail features in Login.
+Use encryption on all sensitive data.
+
+JWT (JSON Web Token)
+
+Use a random complicated key (JWT Secret) to make brute forcing the token very hard.
+Don't extract the algorithm from the payload. Force the algorithm in the backend (HS256 or RS256).
+Make token expiration (TTL, RTTL) as short as possible.
+Don't store sensitive data in the JWT payload, it can be decoded easily.
+
+OAuth
+
+Always validate redirect_uri server-side to allow only whitelisted URLs.
+Always try to exchange for code and not tokens (don't allow response_type=token).
+Use state parameter with a random hash to prevent CSRF on the OAuth authentication process.
+Define the default scope, and validate scope parameters for each application.
+
+Access
+
+Limit requests (Throttling) to avoid DDoS / brute-force attacks. 
+Use HTTPS on server side to avoid MITM (Man In The Middle Attack)
+Use HSTS header with SSL to avoid SSL Strip attack.
+
+Input 
+
+Use the proper HTTP method according to the operation: GET (read), POST (create), PUT/PATCH (replace/update), and DELETE (to delete a record), and respond with 405 Method Not Allowed if the requested method isn't appropriate for the requested resource.
+Validate content-type on request Accept header (Content Negotiation) to allow only your supported format (e.g. application/xml, application/json, etc) and respond with 406 Not Acceptable response if not matched.
+Validate content-type of posted data as you accept (e.g. application/x-www-form-urlencoded, multipart/form-data, application/json, etc).
+Validate User input to avoid common vulnerabilities (e.g. XSS, SQL-Injection, Remote Code Execution, etc).
+Don't use any sensitive data (credentials, Passwords, security tokens, or API keys) in the URL, but use standard Authorization header.
+Use an API Gateway service to enable caching, Rate Limit policies (e.g. Quota, Spike Arrest, Concurrent Rate Limit) and deploy APIs resources dynamically.
+
+Processing
+
+Check if all the endpoints are protected behind authentication to avoid broken authentication process.
+User own resource ID should be avoided. Use /me/orders instead of /user/654321/orders.
+Don't auto-increment IDs. Use UUID instead.
+If you are parsing XML files, make sure entity parsing is not enabled to avoid XXE (XML external entity attack).
+If you are parsing XML files, make sure entity expansion is not enabled to avoid Billion Laughs/XML bomb via exponential entity expansion attack.
+Use a CDN for file uploads.
+If you are dealing with huge amount of data, use Workers and Queues to process as much as possible in background and return response fast to avoid HTTP Blocking.
+Do not forget to turn the DEBUG mode OFF.
+
+Output
+
+Send X-Content-Type-Options: nosniff header.
+Send X-Frame-Options: deny header.
+Send Content-Security-Policy: default-src 'none' header.
+Remove fingerprinting headers - X-Powered-By, Server, X-AspNet-Version etc.
+Force content-type for your response, if you return application/json then your response content-type is application/json.
+Don't return sensitive data like credentials, Passwords, security tokens.
+Return the proper status code according to the operation completed. (e.g. 200 OK, 400 Bad Request, 401 Unauthorized, 405 Method Not Allowed, etc)."
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","You may also want to take a look at OAuth, an emerging open protocol for token-based authorization specifically targeting http apis.
+It is very similar to the approach taken by flickr and remember the milk ""rest"" apis (not necessarily good examples of restful apis, but good examples of the token-based approach)."
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","I'm kind of surprised SSL with client certificates hasn't been mentioned yet. Granted, this approach is only really useful if you can count on the community of users being identified by certificates.  But a number of governments/companies do issue them to their users.  The user doesn't have to worry about creating yet another username/password combination, and the identity is established on each and every connection so communication with the server can be entirely stateless, no user sessions required.  (Not to imply that any/all of the other solutions mentioned require sessions)"
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","Everyone in these answers has overlooked true access control / authorization.
+If for instance your REST APIs / web services are about POSTing / GETing medical records, you may want to define access control policie about who can access the data and under which circumstances. For instance:
+
+doctors can GET the medical record of a patient they have a care relationship with
+no one can POST medical data outside practice hours (e.g. 9 to 5)
+end-users can GET medical records they own or medical records of patients for whom they are the guardian
+nurses can UPDATE the medical record of a patient that belongs to the same unit as the nurse.
+
+In order to define and implement those fine-grained authorizations, you will need to use an attribute-based access control language called XACML, the eXtensible Access Control Markup Language.
+The other standards here are for the following:
+
+OAuth: id. federation and delegation of authorization e.g. letting a service act on my behalf on another service (Facebook can post to my Twitter)
+SAML: identity federation / web SSO. SAML is very much about who the user is.
+WS-Security / WS-* standards: these focus on the communication between SOAP services. They are specific to the application-level messaging format (SOAP) and they deal with aspects of messaging e.g. reliability, security, confidentiality, integrity, atomicity, eventing... None cover access control and all are specific to SOAP.
+
+XACML is technology-agnostic. It can be applied to java apps, .NET, Python, Ruby... web services, REST APIs, and more.
+The following are interesting resources:
+
+the OASIS XACML website
+the NIST ABAC standard"
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","I've used OAuth a few times, and also used some other methods (BASIC/DIGEST). I wholeheartedly suggest OAuth. The following link is the best tutorial I've seen on using OAuth:
+The OAuth 1.0 Guide | hueniverse"
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","One of the best posts I've ever come across regarding Security as it relates to REST is over at 1 RainDrop.  The MySpace API's use OAuth also for security and you have full access to their custom channels in the RestChess code, which I did a lot of exploration with. This was demo'd at Mix and you can find the posting here."
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","Thanks for the excellent advice. We ended up using a custom HTTP header to pass an identity token from the client to the service, in preparation for integrating our RESTful API with the the upcoming Zermatt Identity framework from Microsoft. I have described the problem here and our solution here. I also took tweakt's advice and bought RESTful Web Services - a very good book if you're building a RESTful API of any kind."
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","OWASP(Open Web Application Security Project) has some cheat sheets covering about all aspects of Web Application development. This Project is a very valuable and reliable source of information.
+Regarding REST services you can check this: https://www.owasp.org/index.php/REST_Security_Cheat_Sheet"
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.",I would recommend OAuth 2/3. You can find more information at http://oauth.net/2/
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","The fact that the SOAP world is pretty well covered with security standards doesn't mean that it's secure by default. In the first place, the standards are very complex. Complexity is not a very good friend of security and implementation vulnerabilities such as XML signature wrapping attacks are endemic here. 
+As for the .NET environment I won't help much, but “Building web services with Java” (a brick with ~10 authors) did help me a lot in understanding the WS-* security architecture and, especially, its quirks."
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.",I searched a lot about restful ws security and we also ended up with using token via cookie from client to server to authenticate the requests . I  used spring security for authorization of requests in service because I had to authenticate and authorized each request based on specified security policies that has already been in DB.
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","REST itself offers no security standards, but things like OAuth and SAML are rapidly becoming the standards in this space.  However, authentication and authorization are only a small part of what you need to consider.  Many of the known vulnerabilities relating to web applications apply very much to REST apis.  You have to consider input validation, session cracking, inappropriate error messages, internal employee vulnerabilities and so on.  It is a big subject."
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","I want to add(in line with stinkeymatt), simplest solution would be to add SSL certificates to your site. In other words, make sure your url is HTTPS://. That will cover your transport security (bang for the buck). With RESTful url's, idea is to keep it simple (unlike WS* security/SAML), you can use oAuth2/openID connect or even Basic Auth (in simple cases). But you will still need SSL/HTTPS. Please check ASP.NET Web API 2 security here: http://www.asp.net/web-api/overview/security (Articles and Videos)"
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","As @Nathan ended up with which is a simple HTTP Header, and some had said OAuth2 and client side SSL certificates.  The gist of it is this... your REST API shouldn't have to handle security as that should really be outside the scope of the API.
+Instead a security layer should be put on top of it, whether it is an HTTP Header behind a web proxy (a common approach like SiteMinder, Zermatt or even Apache HTTPd), or as complicated as OAuth 2.
+The key thing is the requests should work without any end-user interaction.  All that is needed is to ensure that the connection to the REST API is authenticated.  In Java EE we have the notion of a userPrincipal that can be obtained on an HttpServletRequest.  It is also managed in the deployment descriptor that a URL pattern can be secure so the REST API code does not need to check anymore.
+In the WCF world, I would use ServiceSecurityContext.Current to get the current security context.  You need to configure you application to require authentication.
+There is one exception to the statement I had above and that's the use of a nonce to prevent replays (which can be attacks or someone just submitting the same data twice).  That part can only be handled in the application layer."
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","For Web Application Security, you should take a look at OWASP (https://www.owasp.org/index.php/Main_Page) which provides cheatsheets for various security attacks. You can incorporate as many measures as possible to secure your Application. 
+With respect to API security (authorization, authentication, identity management), there are multiple ways as already mentioned (Basic,Digest and OAuth). There are loop holes in OAuth1.0, so you can use OAuth1.0a (OAuth2.0 is not widely adopted due to concerns with the specification)"
+Best Practices for securing a REST API / web service [closed],"Closed. This question is opinion-based. It is not currently accepting answers.
+                                
+                            
+
+
+
+
+
+
+
+
+
+
+
+Want to improve this question? Update the question so it can be answered with facts and citations by editing this post.
+
+
+Closed 6 years ago.
+
+
+
+
+
+
+
+                        Improve this question
+                    
+
+
+
+When designing a REST API or service are there any established best practices for dealing with security (Authentication, Authorization, Identity Management) ?
+When building a SOAP API you have WS-Security as a guide and much literature exists on the topic. I have found less information about securing REST endpoints.
+While I understand REST intentionally does not have specifications analogous to WS-* I am hoping best practices or recommended patterns have emerged.
+Any discussion or links to relevant documents would be very much appreciated.
+If it matters, we would be using WCF with POX/JSON serialized messages for our REST API's/Services built using v3.5 of the .NET Framework.","It's been a while but the question is still relevant, though the answer might have changed a bit. 
+An API Gateway would be a flexible and highly configurable solution.
+I tested and used KONG quite a bit and really liked what I saw. KONG provides an admin REST API of its own which you can use to manage users. 
+Express-gateway.io is more recent and is also an API Gateway."

@@ -1,0 +1,38 @@
+.results-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 20px;
+    text-align: center;
+}
+
+.chart-wrapper {
+    width: 60%;
+    margin-bottom: 30px;
+}
+
+.aspect-analysis {
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    flex-wrap: wrap;
+}
+
+.aspect-result {
+    margin: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 200px;
+    background-color: #f9f9f9;
+}
+
+h3 {
+    color: #333;
+}
+
+p {
+    color: #666;
+}
